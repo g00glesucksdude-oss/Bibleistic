@@ -15,7 +15,8 @@ def extract_text(pdf_path):
     for page in reader.pages:
         try:
             full_text += page.extract_text() + "\n"
-        except:
+        except Exception as e:
+            print(f"⚠️ Failed to extract page: {e}")
             continue
     return full_text
 
@@ -42,15 +43,19 @@ def save_json(verses_by_book, output_dir):
     os.makedirs(output_dir, exist_ok=True)
     for book, verses in verses_by_book.items():
         filename = f"{book.replace(' ', '_')}.json"
-        with open(os.path.join(output_dir, filename), "w", encoding="utf-8") as f:
-            json.dump(verses, f, indent=2)
+        try:
+            with open(os.path.join(output_dir, filename), "w", encoding="utf-8") as f:
+                json.dump(verses, f, indent=2, ensure_ascii=False)
+        except UnicodeEncodeError as e:
+            print(f"⚠️ Unicode error in {book}: {e}")
 
 def show_random_verse(verses_by_book):
     all_verses = []
     for verses in verses_by_book.values():
         all_verses.extend(verses)
-    verse = random.choice(all_verses)
-    messagebox.showinfo("📜 Divine Verse", f"{verse['chapter']}:{verse['verse']} — {verse['text']}")
+    if all_verses:
+        verse = random.choice(all_verses)
+        messagebox.showinfo("📜 Divine Verse", f"{verse['chapter']}:{verse['verse']} — {verse['text']}")
 
 def convert_pdf_to_json():
     pdf_path = filedialog.askopenfilename(title="Select Bible PDF", filetypes=[("PDF Files", "*.pdf")])
